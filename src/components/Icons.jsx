@@ -26,3 +26,20 @@ export const Refresh = (p) => (
     <path d="M20 11a8 8 0 1 0-2.3 6.3M20 4v7h-7" />
   </svg>
 );
+export const Search = (p) => (
+  <svg {...base} {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M21 21l-4.35-4.35" />
+  </svg>
+);
+export const Clear = (p) => (
+  <svg {...base} {...p}>
+    <path d="M18 6L6 18M6 6l12 12" />
+  </svg>
+);
+export const Copy = (p) => (
+  <svg {...base} {...p}>
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);

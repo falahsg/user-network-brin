@@ -3,6 +3,7 @@
 Dashboard React untuk memantau jumlah klien (DHCP, Dynamic, Hotspot, Guest) di kawasan **Gatsu**, **Ancol**, dan **Pejaten**, sesi **Pagi** dan **Siang**. Hanya dapat diakses dari jaringan BRIN.
 
 ## Fitur
+- **Pencarian Pemilik Perangkat (MAC / Username)**: Cari data pemilik perangkat jaringan berdasarkan Username atau MAC Address lengkap dengan informasi hostname, waktu dibuat, dan waktu diperbarui
 - Tema **terang dan gelap**: tombol di pojok kanan atas, mengikuti pengaturan perangkat saat pertama dibuka, pilihan diingat, tanpa kedip saat halaman dimuat
 - Grafik garis tegas dan berwarna (SVG buatan sendiri, tanpa library chart). Garis menggambar dirinya setiap kali kawasan, sesi, atau rentang diganti, titik data muncul berurutan dan tooltip dan penanda saat disentuh atau diarahkan kursor
 - Kawasan dan sesi (Pagi, Siang, Pagi & siang) dipilih lewat **dropdown daftar**
@@ -67,9 +68,21 @@ Pengaturan lewat environment variable (lihat `.env.example`):
 |---|---|---|
 | `PORT` | `1818` | Port server |
 | `HOST` | `0.0.0.0` | Alamat yang didengarkan |
-| `API_BASE` | `http://10.13.222.10:5010` | Alamat server API sumber |
+| `API_CLIENT_COUNT_BASE` | `http://10.13.222.10:5010` | Alamat API statistik klien |
+| `API_MAC_OWNER_BASE` | `http://10.13.222.10:5001` | Alamat API pemilik MAC / username |
+| `API_BASE` | `http://10.13.222.10:5010` | Fallback kompatibilitas API Client Count |
 | `ALLOWED_PREFIXES` | `103.` | Awalan IP yang diizinkan (pisahkan koma) |
 | `ALLOW_LOCALHOST` | `true` | Izinkan `127.0.0.1` untuk uji di server |
+
+### Menjalankan dengan Docker
+Jalankan container dengan menentukan environment variable atau file `.env`:
+```bash
+docker build -t client-dashboard -f Dockerfile.stg .
+docker run -d -p 1818:1818 \
+  -e API_CLIENT_COUNT_BASE=http://10.13.222.10:5010 \
+  -e API_MAC_OWNER_BASE=http://10.13.222.10:5001 \
+  --name client-dashboard-app client-dashboard
+```
 
 
 ### Menjalankan permanen dengan PM2

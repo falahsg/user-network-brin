@@ -3,6 +3,7 @@ import Chart from './components/Chart.jsx';
 import DataTable from './components/DataTable.jsx';
 import { Refresh } from './components/Icons.jsx';
 import KpiStrip from './components/KpiStrip.jsx';
+import MacOwnerSearch from './components/MacOwnerSearch.jsx';
 import RangeInfo from './components/RangeInfo.jsx';
 import Segmented from './components/Segmented.jsx';
 import Select from './components/Select.jsx';
@@ -76,6 +77,8 @@ export default function App() {
       </header>
 
       <main>
+        <MacOwnerSearch />
+
         <section className="controls" aria-label="Filter data">
           <Select label="Kawasan" options={kawasanOptions} value={kawasan} onChange={setKawasan} />
           <Select label="Sesi" options={sessionOptions} value={session} onChange={setSession} />
