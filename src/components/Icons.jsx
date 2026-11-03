@@ -43,3 +43,31 @@ export const Copy = (p) => (
     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
   </svg>
 );
+export const Menu = (p) => (
+  <svg {...base} {...p}>
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
+export const Close = (p) => (
+  <svg {...base} {...p}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+export const Dashboard = (p) => (
+  <svg {...base} {...p}>
+    <rect x="3" y="3" width="7" height="9" rx="1" />
+    <rect x="14" y="3" width="7" height="5" rx="1" />
+    <rect x="14" y="12" width="7" height="9" rx="1" />
+    <rect x="3" y="16" width="7" height="5" rx="1" />
+  </svg>
+);
+export const Devices = (p) => (
+  <svg {...base} {...p}>
+    <rect x="2" y="4" width="20" height="12" rx="2" />
+    <path d="M6 20h12" />
+    <path d="M12 16v4" />
+  </svg>
+);

@@ -52,6 +52,11 @@ function isDockerPrivateIp(ip) {
 function isAllowed(ip) {
   ip = normalizeIp(ip);
 
+  // Izinkan semua IP jika wildcard (*) digunakan
+  if (ALLOWED_PREFIXES.includes('*')) {
+    return true;
+  }
+
   // IP public yang diizinkan melalui konfigurasi
   if (ALLOWED_PREFIXES.some((prefix) => ip.startsWith(prefix))) {
     return true;
@@ -90,7 +95,7 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self'"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com"
   );
   next();
 });

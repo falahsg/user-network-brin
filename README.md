@@ -3,7 +3,8 @@
 Dashboard React untuk memantau jumlah klien (DHCP, Dynamic, Hotspot, Guest) di kawasan **Gatsu**, **Ancol**, dan **Pejaten**, sesi **Pagi** dan **Siang**. Hanya dapat diakses dari jaringan BRIN.
 
 ## Fitur
-- **Pencarian Pemilik Perangkat (MAC / Username)**: Cari data pemilik perangkat jaringan berdasarkan Username atau MAC Address lengkap dengan informasi hostname, waktu dibuat, dan waktu diperbarui
+- **Navigasi Sidebar & SPA (Single Page Application)**: Berpindah halaman antar *Statistik Jaringan* dan *Cari Perangkat* secara instan tanpa reload halaman, lengkap dengan sidebar responsif (desktop, tablet, dan drawer overlay di HP)
+- **Halaman Pencarian Pemilik Perangkat (MAC / Username)**: Cari data pemilik perangkat jaringan berdasarkan Username atau MAC Address lengkap dengan informasi hostname, waktu dibuat, dan waktu diperbarui
 - Tema **terang dan gelap**: tombol di pojok kanan atas, mengikuti pengaturan perangkat saat pertama dibuka, pilihan diingat, tanpa kedip saat halaman dimuat
 - Grafik garis tegas dan berwarna (SVG buatan sendiri, tanpa library chart). Garis menggambar dirinya setiap kali kawasan, sesi, atau rentang diganti, titik data muncul berurutan dan tooltip dan penanda saat disentuh atau diarahkan kursor
 - Kawasan dan sesi (Pagi, Siang, Pagi & siang) dipilih lewat **dropdown daftar**
@@ -28,13 +29,16 @@ client-dashboard/
 ├─ server/index.js          Server produksi: pembatas IP, proxy API, file statis
 ├─ src/
 │  ├─ main.jsx              Titik masuk React
-│  ├─ App.jsx               Halaman utama dan state filter
+│  ├─ App.jsx               Layout shell utama (Sidebar + Top bar + Routing SPA)
 │  ├─ api.js                Pemanggilan dan perapian data API
 │  ├─ constants.js          Kawasan, sesi, metrik, warna
-│  ├─ styles.css            Seluruh gaya
-│  ├─ components/           Chart, Select, Segmented, KpiStrip, RangeInfo, SourceInfo, DataTable, dll.
-│  ├─ hooks/                useDashboardData (ambil API), useDashboardView (rentang & sesi), useTheme, useCountUp
-│  └─ utils/                time (WIB, sesi), dataset (jendela & seri), chartMath (celah, path), format
+│  ├─ styles.css            Seluruh gaya (layout shell, sidebar, dashboard, tema)
+│  ├─ pages/
+│  │  ├─ DashboardPage.jsx  Halaman statistik user network
+│  │  └─ SearchPage.jsx     Halaman pencarian user / MAC address perangkat
+│  ├─ components/           Sidebar, Chart, Select, Segmented, MacOwnerSearch, dll.
+│  ├─ hooks/                useDashboardData, useDashboardView, useTheme, useCountUp
+│  └─ utils/                time, dataset, chartMath, format
 ├─ public/theme-init.js     Menerapkan tema sebelum halaman tampil
 ├─ vite.config.js
 ├─ .env.example
