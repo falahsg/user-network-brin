@@ -57,7 +57,7 @@ export default function DashboardPage({ data, raw, errors, loading, updatedAt })
 
       {error && (
         <p className="alert" role="alert">
-          Sebagian data {kawasanLabel} gagal dimuat ({error}). Periksa koneksi ke server API.
+          Sebagian data {kawasanLabel} gagal dimuat ({error}). Pastikan Anda terhubung ke jaringan internal atau VPN BRIN.
         </p>
       )}
 

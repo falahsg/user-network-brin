@@ -28,28 +28,52 @@ const ALLOW_LOCALHOST = (process.env.ALLOW_LOCALHOST || 'true');
 const KAWASAN = new Set(['gatsu', 'ancol', 'pejaten']);
 const SESSIONS = new Set(['pagi', 'siang']);
 const CACHE_TTL_MS = 30_000;
-const UPSTREAM_TIMEOUT_MS = 8_000;
+const UPSTREAM_TIMEOUT_MS = 4_000;
 
-const normalizeIp = (ip = "") => ip.replace(/^::ffff:/, "");
+const normalizeIp = (ip = '') => ip.replace(/^::ffff:/, '');
 
-function isDockerPrivateIp(ip) {
-  const parts = ip.split(".").map(Number);
-
+function isPrivateIp(ip) {
+  const parts = ip.split('.').map(Number);
   if (
     parts.length !== 4 ||
     parts.some((n) => !Number.isInteger(n) || n < 0 || n > 255)
   ) {
     return false;
   }
-
   const [a, b] = parts;
-
   return (
     a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)
   );
 }
 
-function isAllowed(ip) {
+// Mengekstrak IP asli client bahkan jika berada di balik Cloudflare Tunnel atau Reverse Proxy
+export function getClientIp(req) {
+  // 1. Cloudflare Tunnel / Cloudflare Edge (selalu berisi client IP asli)
+  const cfIp = req.headers?.['cf-connecting-ip'];
+  if (cfIp) {
+    const ip = String(cfIp).split(',')[0].trim();
+    if (ip) return normalizeIp(ip);
+  }
+
+  // 2. Standard X-Forwarded-For (ambil IP pertama = client asli)
+  const xff = req.headers?.['x-forwarded-for'];
+  if (xff) {
+    const ip = String(xff).split(',')[0].trim();
+    if (ip) return normalizeIp(ip);
+  }
+
+  // 3. Header X-Real-IP
+  const xReal = req.headers?.['x-real-ip'];
+  if (xReal) {
+    const ip = String(xReal).split(',')[0].trim();
+    if (ip) return normalizeIp(ip);
+  }
+
+  // 4. Socket IP langsung
+  return normalizeIp(req.socket?.remoteAddress || '');
+}
+
+export function isAllowed(ip) {
   ip = normalizeIp(ip);
 
   // Izinkan semua IP jika wildcard (*) digunakan
@@ -57,18 +81,18 @@ function isAllowed(ip) {
     return true;
   }
 
-  // IP public yang diizinkan melalui konfigurasi
+  // IP public yang diizinkan melalui konfigurasi (default: awalan 103. untuk BRIN)
   if (ALLOWED_PREFIXES.some((prefix) => ip.startsWith(prefix))) {
     return true;
   }
 
-  // Izinkan localhost jika diaktifkan
-  if (ALLOW_LOCALHOST === "true" && (ip === "127.0.0.1" || ip === "::1")) {
+  // Izinkan localhost jika diaktifkan (untuk pengujian lokal / direct tunnel jika diizinkan)
+  if (ALLOW_LOCALHOST === 'true' && (ip === '127.0.0.1' || ip === '::1')) {
     return true;
   }
 
-  // Izinkan alamat privat Docker
-  if (isDockerPrivateIp(ip)) {
+  // Izinkan alamat privat intranet / Docker
+  if (isPrivateIp(ip)) {
     return true;
   }
 
@@ -78,33 +102,50 @@ function isAllowed(ip) {
 const app = express();
 app.disable('x-powered-by');
 
-// 1) Pembatas jaringan. Memakai alamat socket asli, bukan header yang bisa dipalsukan.
-app.use((req, res, next) => {
-  const ip = normalizeIp(req.socket.remoteAddress);
-  if (isAllowed(ip)) return next();
-  console.warn(`[blocked] ${ip} ${req.method} ${req.url}`);
-  res
-    .status(403)
-    .type("text/plain")
-    .send(`403 - Akses ditolak. IP yang terdeteksi: ${ip}`);
-});
-
 app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com"
+    "default-src 'self' http: https: data:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http: https: data: https://cloudflareinsights.com;"
   );
   next();
 });
 app.use(compression());
 
-// 2) Proxy API dengan cache singkat agar ringan bagi server sumber.
+// Middleware pembatas jaringan KHUSUS untuk endpoint data API.
+// File statis web (HTML, CSS, JS) TIDAK melewati middleware ini, sehingga tampilan web selalu terbuka untuk siapa pun.
+export function requireAllowedNetwork(req, res, next) {
+  const clientIp = getClientIp(req);
+  if (isAllowed(clientIp)) {
+    return next();
+  }
+
+  console.warn(`[API Blocked] Akses ditolak dari IP: ${clientIp} (${req.method} ${req.originalUrl})`);
+  return res.status(403).json({
+    status: 'error',
+    code: 'FORBIDDEN_NETWORK',
+    message: `Akses data hanya diizinkan dari jaringan internal atau VPN BRIN. IP Anda: ${clientIp || 'Tidak dikenal'}`,
+    clientIp,
+  });
+}
+
+// Endpoint konfigurasi runtime (tetap terbuka)
+app.get('/api/config', (_req, res) => {
+  res.json({
+    status: 'success',
+    data: {
+      clientCountBase: API_CLIENT_COUNT_BASE,
+      macOwnerBase: API_MAC_OWNER_BASE,
+    },
+  });
+});
+
+// Proxy API dengan proteksi jaringan BRIN dan cache singkat
 const cache = new Map();
 
-app.get('/api/client-count/:kawasan/:session', async (req, res) => {
+app.get('/api/client-count/:kawasan/:session', requireAllowedNetwork, async (req, res) => {
   const { kawasan, session } = req.params;
   if (!KAWASAN.has(kawasan) || !SESSIONS.has(session)) {
     return res.status(404).json({ status: 'error', message: 'Endpoint tidak dikenal' });
@@ -131,7 +172,7 @@ app.get('/api/client-count/:kawasan/:session', async (req, res) => {
   }
 });
 
-app.get('/api/mac-owners/username/:username', async (req, res) => {
+app.get('/api/mac-owners/username/:username', requireAllowedNetwork, async (req, res) => {
   const { username } = req.params;
   if (!username) {
     return res.status(400).json({ status: 'error', message: 'Username wajib diisi' });
@@ -151,7 +192,7 @@ app.get('/api/mac-owners/username/:username', async (req, res) => {
   }
 });
 
-app.get('/api/mac-owners/mac-address/:mac(*)', async (req, res) => {
+app.get('/api/mac-owners/mac-address/:mac(*)', requireAllowedNetwork, async (req, res) => {
   const { mac } = req.params;
   if (!mac) {
     return res.status(400).json({ status: 'error', message: 'MAC Address wajib diisi' });
@@ -171,6 +212,7 @@ app.get('/api/mac-owners/mac-address/:mac(*)', async (req, res) => {
   }
 });
 
+// File statis web (HTML, CSS, JS) - Tidak diproteksi IP agar web selalu terbuka untuk publik
 app.use(
   express.static(DIST, {
     index: false,
@@ -180,14 +222,20 @@ app.use(
     },
   })
 );
+
 app.get('*', (_req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(DIST, 'index.html'));
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`Dashboard berjalan di http://${HOST}:${PORT}`);
-  console.log(`API Client Count : ${API_CLIENT_COUNT_BASE}`);
-  console.log(`API Mac Owner    : ${API_MAC_OWNER_BASE}`);
-  console.log(`Izin akses       : ${ALLOWED_PREFIXES.join(', ')}${ALLOW_LOCALHOST ? ' + localhost' : ''}`);
-});
+// Jalankan server jika dipanggil langsung
+if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+  app.listen(PORT, HOST, () => {
+    console.log(`Dashboard berjalan di http://${HOST}:${PORT}`);
+    console.log(`API Client Count : ${API_CLIENT_COUNT_BASE}`);
+    console.log(`API Mac Owner    : ${API_MAC_OWNER_BASE}`);
+    console.log(`Izin akses API   : ${ALLOWED_PREFIXES.join(', ')}${ALLOW_LOCALHOST ? ' + localhost' : ''}`);
+  });
+}
+
+export default app;

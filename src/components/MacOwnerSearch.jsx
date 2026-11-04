@@ -186,7 +186,7 @@ export default function MacOwnerSearch() {
       {/* Error state */}
       {error && (
         <p className="alert search-alert" role="alert">
-          {error}. Pastikan koneksi ke server API mac-owners aktif.
+          {error}. Pastikan koneksi ke server API mac-owners aktif atau terhubung ke jaringan / VPN BRIN.
         </p>
       )}
 
