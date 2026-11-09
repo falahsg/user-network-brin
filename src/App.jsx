@@ -111,7 +111,6 @@ export default function App() {
             {activePage === 'dashboard' && (
               <>
                 <span className="stamp" aria-live="polite">
-                  <i className="pulse" aria-hidden="true" />
                   {updatedAt ? `Diperbarui ${fmtTime(updatedAt)}` : 'Memuat…'}
                 </span>
                 <button

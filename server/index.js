@@ -108,7 +108,7 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self' http: https: data:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http: https: data: https://cloudflareinsights.com;"
+    "default-src 'self' http: https: data:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http: https: data: https://cloudflareinsights.com;"
   );
   next();
 });

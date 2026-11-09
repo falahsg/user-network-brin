@@ -71,7 +71,6 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
 
         <div className="sidebar-footer">
           <div className="sidebar-status">
-            <span className="pulse-dot" aria-hidden="true" />
             <span>Kawasan BRIN</span>
           </div>
           <span className="sidebar-version">v1.1 · React SPA</span>

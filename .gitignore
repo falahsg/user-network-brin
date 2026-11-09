@@ -3,3 +3,4 @@ dist
 .env
 Dockerfile.stg
 nginx.conf.example
+.agents
